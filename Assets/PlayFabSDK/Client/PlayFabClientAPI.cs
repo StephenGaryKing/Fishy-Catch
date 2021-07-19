@@ -11,9 +11,9 @@ namespace PlayFab
     /// APIs which provide the full range of PlayFab features available to the client - authentication, account and data
     /// management, inventory, friends, matchmaking, reporting, and platform-specific functionality
     /// </summary>
-    public static class PlayFabServerAPI
+    public static class PlayFabClientAPI
     {
-        static PlayFabServerAPI() {}
+        static PlayFabClientAPI() {}
 
         /// <summary>
         /// Verify client login.

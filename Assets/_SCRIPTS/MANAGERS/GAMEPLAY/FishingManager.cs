@@ -20,21 +20,23 @@ public class FishingManager : MonoBehaviour
 		reelButton.onClick.AddListener(ReelFishingLine);
 	}
 
-	CatalogItem GetRandomFish()
+	void GetRandomFish(System.Action<CatalogItem> onComplete)
 	{
-		int ran = Random.Range(0, CatalogueManager.standardFish.Count);
-		return CatalogueManager.standardFish[ran];
+		GameplayFlowManager.Instance.gatchaManager.RollTable("Anything", i => onComplete(GameplayFlowManager.Instance.catalogueManager.GetItem(i)));
 	}
 
 	void CastFishingLine()
 	{
 		//Create a random fish
-		fish = GetRandomFish();
+		GetRandomFish(f =>
+		{
+			fish = f;
 
-		if (fishing != null)
-			UIManager.Instance.debugDisplay.ShowDebugText("You can only cast your line once");
-		else
-			fishing = StartCoroutine(Cast(5f, CastFishingLine));
+			if (fishing != null)
+				UIManager.Instance.debugDisplay.ShowDebugText("You can only cast your line once");
+			else
+				fishing = StartCoroutine(Cast(5f, CastFishingLine));
+		});
 	}
 
 	void ReelFishingLine()

@@ -24,7 +24,7 @@ namespace PlayFab.Internal
                 clientInstanceApi.ReportDeviceInfo(request, null, OnGatherFail, settings);
 #if !DISABLE_PLAYFAB_STATIC_API
             else
-                PlayFabServerAPI.ReportDeviceInfo(request, null, OnGatherFail, settings);
+                PlayFabClientAPI.ReportDeviceInfo(request, null, OnGatherFail, settings);
 #endif
         }
         private static void OnGatherFail(PlayFabError error)

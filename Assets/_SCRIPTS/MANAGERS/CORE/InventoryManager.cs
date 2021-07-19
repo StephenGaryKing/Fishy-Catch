@@ -19,7 +19,7 @@ public class InventoryManager
 	public InventoryManager()
 	{
 		GetUserInventoryRequest request = new GetUserInventoryRequest();
-		PlayFabServerAPI.GetUserInventory(request, OnSuccess, OnFail);
+		PlayFabClientAPI.GetUserInventory(request, OnSuccess, OnFail);
 
 		void OnSuccess(GetUserInventoryResult result)
 		{
@@ -72,6 +72,6 @@ public class InventoryManager
 				Debug.Log(i.DisplayName + ": " + i.RemainingUses);
 			}
 		};
-		PlayFabServerAPI.PurchaseItem(request, Onsuccess, OnFail);
+		PlayFabClientAPI.PurchaseItem(request, Onsuccess, OnFail);
 	}
 }

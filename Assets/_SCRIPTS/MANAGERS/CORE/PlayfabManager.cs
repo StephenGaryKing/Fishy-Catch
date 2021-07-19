@@ -18,7 +18,7 @@ public class PlayfabManager
 			CustomId = SystemInfo.deviceUniqueIdentifier,
 			CreateAccount = true
 		};
-		PlayFabServerAPI.LoginWithCustomID(request, OnSuccess, OnFail);
+		PlayFabClientAPI.LoginWithCustomID(request, OnSuccess, OnFail);
 
 		void OnSuccess(LoginResult result)
 		{

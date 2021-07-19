@@ -7,30 +7,46 @@ using PlayFab.ClientModels;
 
 public class CatalogueManager
 {
-	public static List<CatalogItem> standardFish;
+	public static Dictionary<string, Dictionary<string, CatalogItem>> catalogs = new Dictionary<string, Dictionary<string, CatalogItem>>();
 
-	public void GetCatalogue(string catalogueName)
+	public CatalogueManager()
 	{
 		GetCatalogItemsRequest request = new GetCatalogItemsRequest
 		{
-			CatalogVersion = catalogueName
+			CatalogVersion = "Standard_Fish"
 		};
 
-		PlayFabServerAPI.GetCatalogItems(request, OnSuccess, OnFail);
+		PlayFabClientAPI.GetCatalogItems(request, OnSuccess, OnFail);
 
 		void OnSuccess(GetCatalogItemsResult result)
 		{
-			Debug.Log("Catalogue downloaded: " + catalogueName);
-			standardFish = result.Catalog;
-
-			foreach (var i in standardFish)
-				Debug.Log(i.DisplayName);
+			Debug.Log("Catalog downloaded: " + request.CatalogVersion);
+			SetupCatalog(request.CatalogVersion, result.Catalog);
 		}
 
 		void OnFail(PlayFabError error)
 		{
-			Debug.LogError("Catalogue failed to download");
+			Debug.LogError("Catalog failed to download");
 			Debug.LogError(error.GenerateErrorReport());
 		}
+	}
+
+	void SetupCatalog(string catalogName, List<CatalogItem> catalog)
+	{
+		Dictionary<string, CatalogItem> result = new Dictionary<string, CatalogItem>();
+		foreach (var item in catalog)
+			result.Add(item.ItemId, item);
+
+		catalogs.Add(catalogName, result);
+	}
+
+	public CatalogItem GetItem(string itemName)
+	{
+		foreach(var cat in catalogs)
+		{
+			if (cat.Value.ContainsKey(itemName))
+				return cat.Value[itemName];
+		}
+		return null;
 	}
 }

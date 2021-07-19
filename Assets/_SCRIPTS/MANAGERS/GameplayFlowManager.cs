@@ -12,6 +12,8 @@ public class GameplayFlowManager : MonoBehaviour
 	public CatalogueManager catalogueManager;
 	[HideInInspector]
 	public InventoryManager inventoryManager;
+	[HideInInspector]
+	public GatchaManager gatchaManager;
 
 	public static GameplayFlowManager Instance;
 
@@ -23,6 +25,7 @@ public class GameplayFlowManager : MonoBehaviour
 		{
 			InitCatalogueManager();
 			InitInventoryManager();
+			InitGatchaManager();
 		});
     }
 
@@ -34,11 +37,15 @@ public class GameplayFlowManager : MonoBehaviour
 	void InitCatalogueManager()
 	{
 		catalogueManager = new CatalogueManager();
-		catalogueManager.GetCatalogue("Standard_Fish");
 	}
 
 	void InitInventoryManager()
 	{
 		inventoryManager = new InventoryManager();
+	}
+
+	void InitGatchaManager()
+	{
+		gatchaManager = new GatchaManager();
 	}
 }
