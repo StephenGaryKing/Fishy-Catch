@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using PlayFab.ClientModels;
+using System;
+using UnityEngine;
 
 public class FishingManager : MonoBehaviour
 {
@@ -59,6 +61,17 @@ public class FishingManager : MonoBehaviour
 		}
 	}
 
+	void Bite()
+	{
+		UIManager.Instance.debugDisplay.ShowDebugText("Fish is biting");
+		biting = true;
+	}
+
+	void FakeBite()
+	{
+		UIManager.Instance.debugDisplay.ShowDebugText("Fish is fake biting");
+	}
+
 	void CatchNothing()
 	{
 		UIManager.Instance.debugDisplay.ShowDebugText("Splash! The " + fish.DisplayName + " got away");
@@ -89,11 +102,17 @@ public class FishingManager : MonoBehaviour
 
 	IEnumerator Cast(float timeToCatch, System.Action OnTimeout)
 	{
-		UIManager.Instance.debugDisplay.ShowDebugText("Fishing: " + fish.DisplayName);
-		yield return new WaitForSeconds(timeToCatch);
-		UIManager.Instance.debugDisplay.ShowDebugText("Fish is biting");
-		biting = true;
-		yield return new WaitForSeconds(2f);
+		while (!biting)
+		{
+			UIManager.Instance.debugDisplay.ShowDebugText("Fishing: " + fish.DisplayName);
+			yield return new WaitForSeconds(timeToCatch);
+			if (UnityEngine.Random.Range(0, 100) < 20)
+				Bite();
+			else
+				FakeBite();
+			yield return new WaitForSeconds(2f);
+		}
+
 		UIManager.Instance.debugDisplay.ShowDebugText("Fish got away");
 		biting = false;
 		fishing = null;
