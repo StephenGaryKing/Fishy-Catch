@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using PlayFab.ClientModels;
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class FishingManager : MonoBehaviour
 {
@@ -90,7 +91,34 @@ public class FishingManager : MonoBehaviour
 
 		void Onsuccess(PurchaseItemResult result)
 		{
-			UIManager.Instance.debugDisplay.ShowDebugText(fish.DisplayName + " is caught");
+			var item = result.Items[0];
+			var popup = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup") as ItemPopupDisplay;
+			popup?.Setup(new object[]
+			{
+				"You caught a " + fish.DisplayName,
+				new object[]
+				{
+					new object[]
+					{
+						"Keep",
+						new UnityAction(() =>
+						{
+							UIManager.Instance.debugDisplay.ShowDebugText(item.DisplayName + " was kept");
+							UIManager.Instance.popupManager.HidePopup(popup);
+						})
+					},
+					new object[]
+					{
+						"Sell",
+						new UnityAction(() =>
+						{
+							GameplayFlowManager.Instance.inventoryManager.SellItem(item, CurrencyTypes.gold);
+							UIManager.Instance.debugDisplay.ShowDebugText(item.DisplayName + " was sold");
+							UIManager.Instance.popupManager.HidePopup(popup);
+						})
+					}
+				}
+			});
 		}
 
 		void OnFail(PlayFabError error)
@@ -106,10 +134,11 @@ public class FishingManager : MonoBehaviour
 		{
 			UIManager.Instance.debugDisplay.ShowDebugText("Fishing: " + fish.DisplayName);
 			yield return new WaitForSeconds(timeToCatch);
-			if (UnityEngine.Random.Range(0, 100) < 20)
-				Bite();
-			else
-				FakeBite();
+			Bite();
+			//if (UnityEngine.Random.Range(0, 100) < 20)
+			//	Bite();
+			//else
+			//	FakeBite();
 			yield return new WaitForSeconds(2f);
 		}
 

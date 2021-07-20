@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class UIManager : MonoBehaviour
 {
+	[Header("Managers")]
+	public PopupManager popupManager;
+
+	[Header("Displays")]
 	public DebugDisplay debugDisplay;
 	public CurrencyDisplay currencyDisplay;
 	public ItemDisplay itemDisplay;

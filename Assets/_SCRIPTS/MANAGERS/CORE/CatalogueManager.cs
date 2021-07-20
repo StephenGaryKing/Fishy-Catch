@@ -40,12 +40,12 @@ public class CatalogueManager
 		catalogs.Add(catalogName, result);
 	}
 
-	public CatalogItem GetItem(string itemName)
+	public CatalogItem GetItem(string itemID)
 	{
 		foreach(var cat in catalogs)
 		{
-			if (cat.Value.ContainsKey(itemName))
-				return cat.Value[itemName];
+			if (cat.Value.ContainsKey(itemID))
+				return cat.Value[itemID];
 		}
 		return null;
 	}

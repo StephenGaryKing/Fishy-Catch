@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using PlayFab.ClientModels;
+using PlayFab.Json;
 
 public static class CurrencyTypes
 {
@@ -65,7 +66,7 @@ public class InventoryManager
 			}
 
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
-			UIManager.Instance?.itemDisplay.UpdateItems();
+			UIManager.Instance.itemDisplay.UpdateItems();
 
 			foreach (var i in items)
 			{
@@ -73,5 +74,43 @@ public class InventoryManager
 			}
 		};
 		PlayFabClientAPI.PurchaseItem(request, Onsuccess, OnFail);
+	}
+
+	public void SellItem(ItemInstance itemInstance, string currencyType)
+	{
+		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
+		{
+			FunctionName = "SellItem",
+			FunctionParameter = new Dictionary<string, string>{
+            // This is a hex-string value from the GetUserInventory result
+            { "soldItemInstanceId", itemInstance.ItemInstanceId },
+            // Which redeemable virtual currency should be used in your game
+            { "requestedVcType", currencyType },
+		}
+		}, OnSuccess, OnFail);
+
+
+		void OnSuccess(ExecuteCloudScriptResult result)
+		{
+			if (result.Error != null)
+			{
+				Debug.LogError(result.Error.StackTrace);
+				return;
+			}
+
+			currencies[currencyType] += (int)GameplayFlowManager.Instance.catalogueManager.GetItem(itemInstance.ItemId).VirtualCurrencyPrices[currencyType];
+			
+			//decrement item count
+			
+			Debug.Log("Sold item: " + itemInstance.DisplayName);
+			UIManager.Instance.currencyDisplay.UpdateCurrency();
+			UIManager.Instance.itemDisplay.UpdateItems();
+		}
+
+		void OnFail(PlayFabError error)
+		{
+			Debug.LogError("Failed to sell item");
+			Debug.LogError(error.GenerateErrorReport());
+		}
 	}
 }
