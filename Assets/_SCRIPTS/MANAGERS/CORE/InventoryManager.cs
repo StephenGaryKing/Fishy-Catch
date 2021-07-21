@@ -50,20 +50,7 @@ public class InventoryManager
 			currencies[request.VirtualCurrency] -= request.Price;
 
 			foreach (var item in r.Items)
-			{
-				bool itemAddedLocaly = false;
-				for (int i = 0; i < items.Count; i ++)
-				{
-					if (items[i].ItemInstanceId == item.ItemInstanceId)
-					{
-						items[i] = item;
-						itemAddedLocaly = true;
-						break;
-					}
-				}
-				if (!itemAddedLocaly)
-					items.Add(item);
-			}
+				ModifyItemAmountLocal(item, -1);
 
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
 			UIManager.Instance.itemDisplay.UpdateItems();
@@ -99,8 +86,8 @@ public class InventoryManager
 			}
 
 			currencies[currencyType] += (int)GameplayFlowManager.Instance.catalogueManager.GetItem(itemInstance.ItemId).VirtualCurrencyPrices[currencyType];
-			
-			//decrement item count
+
+			ModifyItemAmountLocal(itemInstance, 1);
 			
 			Debug.Log("Sold item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
@@ -112,5 +99,29 @@ public class InventoryManager
 			Debug.LogError("Failed to sell item");
 			Debug.LogError(error.GenerateErrorReport());
 		}
+	}
+
+	void ModifyItemAmountLocal(ItemInstance itemInstance, int amount)
+	{
+		List<ItemInstance> itemsToRemove = new List<ItemInstance>();
+
+		bool itemModified = false;
+		foreach (var item in items)
+		{
+			if (item.ItemInstanceId == itemInstance.ItemInstanceId)
+			{
+				item.RemainingUses += amount;
+				itemModified = true;
+			}
+			if (item.RemainingUses <= 0)
+				itemsToRemove.Add(item);
+		}
+		//Local inventory doesn't contain this item
+		if (!itemModified)
+			items.Add(itemInstance);
+
+		//Remove empty item instances
+		foreach (var item in itemsToRemove)
+			items.Remove(item);
 	}
 }
