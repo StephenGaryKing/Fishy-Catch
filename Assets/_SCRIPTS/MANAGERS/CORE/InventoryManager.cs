@@ -50,7 +50,7 @@ public class InventoryManager
 			currencies[request.VirtualCurrency] -= request.Price;
 
 			foreach (var item in r.Items)
-				ModifyItemAmountLocal(item, -1);
+				ModifyItemAmountLocal(item, 1);
 
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
 			UIManager.Instance.itemDisplay.UpdateItems();
@@ -87,7 +87,7 @@ public class InventoryManager
 
 			currencies[currencyType] += (int)GameplayFlowManager.Instance.catalogueManager.GetItem(itemInstance.ItemId).VirtualCurrencyPrices[currencyType];
 
-			ModifyItemAmountLocal(itemInstance, 1);
+			ModifyItemAmountLocal(itemInstance, -1);
 			
 			Debug.Log("Sold item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
