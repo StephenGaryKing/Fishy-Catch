@@ -8,6 +8,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Events;
 using PlayFab.Json;
+using System.Linq;
 
 public class FishingManager : MonoBehaviour
 {
@@ -93,20 +94,30 @@ public class FishingManager : MonoBehaviour
 		void Onsuccess(PurchaseItemResult result)
 		{
 			var item = result.Items[0];
-			var popup = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup") as ItemPopupDisplay;
+			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
+			var popup = popupReference.Value as ItemPopupDisplay;
 
-			JsonObject[] buttonData = new JsonObject[0];
+			List<JsonObject> buttonData = new List<JsonObject>();
 			JsonObject customData = PlayFabSimpleJson.DeserializeObject<JsonObject>(fish.CustomData);
 			if (customData.ContainsKey("Buttons"))
-				buttonData = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(customData["Buttons"].ToString());
+				buttonData = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(customData["Buttons"].ToString()).ToList();
 
-			foreach (var button in buttonData)
-				button.Add("Sender", fish);
+			//Create default buttons
+			JsonObject function = new JsonObject() { 
+				{ "Name", "HidePopup"},
+				{ "Args", new JsonObject() { { "PopupID", popupReference.Key } } }
+			};
+			JsonObject[] functions = new JsonObject[] { function };
+			JsonObject doneButton = new JsonObject();
+			doneButton.Add("Name", "Done");
+			doneButton.Add("Functions", PlayFab.PfEditor.Json.PlayFabSimpleJson.SerializeObject(functions));
+			buttonData.Add(doneButton);
 
 			popup?.Setup(new object[]
 			{
 				"You caught a " + fish.DisplayName,
-				buttonData
+				buttonData.ToArray(),
+				item
 			});
 		}
 

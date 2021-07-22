@@ -8,10 +8,18 @@ public static class Helper
 {
 	public static Dictionary<string, System.Action<object>> GenericFunctions = new Dictionary<string, System.Action<object>>()
 	{
-		{ "SellItem", (o) =>
+		{ 
+			"SellItem", (o) =>
 			{
 				JsonObject jObject = o as JsonObject;
-				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["sender"] as ItemInstance, jObject["CurrencyType"].ToString());
+				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["Sender"] as ItemInstance, jObject["CurrencyType"].ToString());
+			}
+		},
+		{ 
+			"HidePopup", (o) =>
+			{
+				JsonObject jObject = o as JsonObject;
+				UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
 			}
 		}
 	};

@@ -25,14 +25,15 @@ public class ItemPopupDisplay : PopupDisplay
 			button.GetComponentInChildren<Text>().text = funcInfo["Name"].ToString();
 			button.GetComponentInChildren<Button>().onClick.AddListener(() =>
 			{
-				JsonObject[] functions = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(funcInfo["Functions"].ToString());
+				string json = funcInfo["Functions"].ToString();
+				JsonObject[] functions = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(json);
 				foreach (var function in functions)
 				{
 					if (Helper.GenericFunctions.ContainsKey(function["Name"].ToString()))
 					{
-						JsonObject args = PlayFabSimpleJson.DeserializeObject<JsonObject>(function["Args"].ToString());
-						args.Add("Sender", args["Sender"]);
-						Helper.GenericFunctions[function["Name"].ToString()]?.Invoke(args);
+						JsonObject functionArgs = PlayFabSimpleJson.DeserializeObject<JsonObject>(function["Args"].ToString());
+						functionArgs.Add("Sender", args[2]);
+						Helper.GenericFunctions[function["Name"].ToString()]?.Invoke(functionArgs);
 					}
 				}
 				UIManager.Instance.popupManager.HidePopup(this);
