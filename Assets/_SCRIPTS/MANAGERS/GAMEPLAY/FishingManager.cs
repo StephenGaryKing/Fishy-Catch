@@ -7,6 +7,7 @@ using PlayFab.ClientModels;
 using System;
 using UnityEngine;
 using UnityEngine.Events;
+using PlayFab.Json;
 
 public class FishingManager : MonoBehaviour
 {
@@ -93,31 +94,19 @@ public class FishingManager : MonoBehaviour
 		{
 			var item = result.Items[0];
 			var popup = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup") as ItemPopupDisplay;
+
+			JsonObject[] buttonData = new JsonObject[0];
+			JsonObject customData = PlayFabSimpleJson.DeserializeObject<JsonObject>(fish.CustomData);
+			if (customData.ContainsKey("Buttons"))
+				buttonData = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(customData["Buttons"].ToString());
+
+			foreach (var button in buttonData)
+				button.Add("Sender", fish);
+
 			popup?.Setup(new object[]
 			{
 				"You caught a " + fish.DisplayName,
-				new object[]
-				{
-					new object[]
-					{
-						"Keep",
-						new UnityAction(() =>
-						{
-							UIManager.Instance.debugDisplay.ShowDebugText(item.DisplayName + " was kept");
-							UIManager.Instance.popupManager.HidePopup(popup);
-						})
-					},
-					new object[]
-					{
-						"Sell",
-						new UnityAction(() =>
-						{
-							GameplayFlowManager.Instance.inventoryManager.SellItem(item, CurrencyTypes.gold);
-							UIManager.Instance.debugDisplay.ShowDebugText(item.DisplayName + " was sold");
-							UIManager.Instance.popupManager.HidePopup(popup);
-						})
-					}
-				}
+				buttonData
 			});
 		}
 

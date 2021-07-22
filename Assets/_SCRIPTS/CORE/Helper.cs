@@ -1,9 +1,22 @@
+using PlayFab.ClientModels;
+using PlayFab.Json;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public static class Helper
 {
+	public static Dictionary<string, System.Action<object>> GenericFunctions = new Dictionary<string, System.Action<object>>()
+	{
+		{ "SellItem", (o) =>
+			{
+				JsonObject jObject = o as JsonObject;
+				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["sender"] as ItemInstance, jObject["CurrencyType"].ToString());
+			}
+		}
+	};
+
+
 	[System.Serializable]
 	public class SerializableDictionary<K, V>
 	{ 

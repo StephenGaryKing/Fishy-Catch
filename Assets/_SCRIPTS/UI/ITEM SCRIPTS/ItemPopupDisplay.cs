@@ -1,3 +1,4 @@
+using PlayFab.Json;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,15 +15,28 @@ public class ItemPopupDisplay : PopupDisplay
 	/// <summary>
 	/// Set up the popup with the info it will display
 	/// </summary>
-	/// <param name="args">[ (string)itemName, [(string)behaviourName, (Action)behaviour] ]</param>
+	/// <param name="args">[ (string)itemName, (JsonObject)funtions ]</param>
 	public override void Setup(object[] args)
 	{
 		title.text = args[0].ToString();
-		foreach (object[] btnInfo in args[1] as object[])
+		foreach (JsonObject funcInfo in args[1] as JsonObject[])
 		{
 			var button = Instantiate(buttonPrefab, grid.transform);
-			button.GetComponentInChildren<Text>().text = btnInfo[0].ToString();
-			button.GetComponentInChildren<Button>().onClick.AddListener(btnInfo[1] as UnityAction);
+			button.GetComponentInChildren<Text>().text = funcInfo["Name"].ToString();
+			button.GetComponentInChildren<Button>().onClick.AddListener(() =>
+			{
+				JsonObject[] functions = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(funcInfo["Functions"].ToString());
+				foreach (var function in functions)
+				{
+					if (Helper.GenericFunctions.ContainsKey(function["Name"].ToString()))
+					{
+						JsonObject args = PlayFabSimpleJson.DeserializeObject<JsonObject>(function["Args"].ToString());
+						args.Add("Sender", args["Sender"]);
+						Helper.GenericFunctions[function["Name"].ToString()]?.Invoke(args);
+					}
+				}
+				UIManager.Instance.popupManager.HidePopup(this);
+			});
 		}
 	}
 }

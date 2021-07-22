@@ -8,7 +8,7 @@ public class ItemUI : MonoBehaviour
 {
 	public Text itemName;
 	public Text itemAmount;
-
+	public Button button;
 	public void ShowItem(ItemInstance item)
 	{
 		itemName.text = item.DisplayName;
