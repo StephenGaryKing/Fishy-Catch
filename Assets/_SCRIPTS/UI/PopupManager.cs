@@ -33,7 +33,7 @@ public class PopupManager : MonoBehaviour
 
 	public void HidePopup(PopupDisplay popup)
 	{
-		byte? uid = 0;
+		byte? uid = null;
 		foreach (var p in shownPopups)
 		{
 			if (p.Value == popup)

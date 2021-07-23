@@ -14,7 +14,7 @@ public static class CurrencyTypes
 
 public class InventoryManager
 {
-	public List<ItemInstance> items = new List<ItemInstance>();
+	public Dictionary<string, ItemInstance> items = new Dictionary<string, ItemInstance>();
 	public Dictionary<string, int> currencies = new Dictionary<string, int>();
 
 	public InventoryManager()
@@ -24,7 +24,8 @@ public class InventoryManager
 
 		void OnSuccess(GetUserInventoryResult result)
 		{
-			items = result.Inventory;
+			foreach (var item in result.Inventory)
+				items.Add(item.ItemInstanceId, item);
 			currencies = result.VirtualCurrency;
 			UIManager.Instance?.currencyDisplay.UpdateCurrency();
 			UIManager.Instance?.itemDisplay.UpdateItems();
@@ -37,33 +38,37 @@ public class InventoryManager
 		}
 	}
 
-	public void PurchaseItem(PurchaseItemRequest request, Action<PurchaseItemResult> Onsuccess, Action<PlayFabError> OnFail)
+	public void PurchaseItem(PurchaseItemRequest request, Action<List<ItemInstance>> onSuccess, Action onFail)
 	{
 		if (currencies[request.VirtualCurrency] < request.Price)
 		{
 			OnFail(new PlayFabError() { Error = PlayFabErrorCode.InvalidVirtualCurrency, ErrorMessage = "Not enough local currency" });
 			return;
 		}
+		PlayFabClientAPI.PurchaseItem(request, OnSuccess, OnFail);
 
-		Onsuccess += (r) =>
+		void OnSuccess(PurchaseItemResult result)
 		{
 			currencies[request.VirtualCurrency] -= request.Price;
 
-			foreach (var item in r.Items)
+			foreach (var item in result.Items)
 				ModifyItemAmountLocal(item, 1);
 
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
 			UIManager.Instance.itemDisplay.UpdateItems();
 
-			foreach (var i in items)
-			{
-				Debug.Log(i.DisplayName + ": " + i.RemainingUses);
-			}
-		};
-		PlayFabClientAPI.PurchaseItem(request, Onsuccess, OnFail);
+			onSuccess?.Invoke(result.Items);
+		}
+
+		void OnFail(PlayFabError error)
+		{
+			Debug.LogError("Failed to sell item");
+			Debug.LogError(error.GenerateErrorReport());
+			onFail?.Invoke();
+		}
 	}
 
-	public void SellItem(ItemInstance itemInstance, string currencyType)
+	public void SellItem(ItemInstance itemInstance, string currencyType, Action onSuccess, Action onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
@@ -79,12 +84,6 @@ public class InventoryManager
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
-			if (result.Error != null)
-			{
-				Debug.LogError(result.Error.StackTrace);
-				return;
-			}
-
 			currencies[currencyType] += (int)GameplayFlowManager.Instance.catalogueManager.GetItem(itemInstance.ItemId).VirtualCurrencyPrices[currencyType];
 
 			ModifyItemAmountLocal(itemInstance, -1);
@@ -101,27 +100,48 @@ public class InventoryManager
 		}
 	}
 
+	public void DiscardItem(ItemInstance itemInstance, int amount, Action onSuccess, Action onFail)
+	{
+		PlayFabClientAPI.ConsumeItem(new ConsumeItemRequest()
+		{
+			ItemInstanceId = itemInstance.ItemInstanceId,
+			ConsumeCount = amount
+		}, OnSuccess, OnFail);
+
+		void OnSuccess(ConsumeItemResult result)
+		{
+			SetItemAmountLocal(itemInstance, -1);
+
+			Debug.Log("Sold item: " + itemInstance.DisplayName);
+			UIManager.Instance.currencyDisplay.UpdateCurrency();
+			UIManager.Instance.itemDisplay.UpdateItems();
+		}
+
+		void OnFail(PlayFabError error)
+		{
+			Debug.LogError("Failed to sell item");
+			Debug.LogError(error.GenerateErrorReport());
+		}
+	}
+
 	void ModifyItemAmountLocal(ItemInstance itemInstance, int amount)
 	{
-		List<ItemInstance> itemsToRemove = new List<ItemInstance>();
+		if (items.ContainsKey(itemInstance.ItemInstanceId))
+			items[itemInstance.ItemInstanceId].RemainingUses += amount;
+		else
+			items.Add(itemInstance.ItemInstanceId, itemInstance);
 
-		bool itemModified = false;
-		foreach (var item in items)
-		{
-			if (item.ItemInstanceId == itemInstance.ItemInstanceId)
-			{
-				item.RemainingUses += amount;
-				itemModified = true;
-			}
-			if (item.RemainingUses <= 0)
-				itemsToRemove.Add(item);
-		}
-		//Local inventory doesn't contain this item
-		if (!itemModified)
-			items.Add(itemInstance);
+		if (items[itemInstance.ItemInstanceId].RemainingUses <= 0)
+			items.Remove(itemInstance.ItemInstanceId);
+	}
+	void SetItemAmountLocal(ItemInstance itemInstance, int amount)
+	{
+		if (items.ContainsKey(itemInstance.ItemInstanceId))
+			items[itemInstance.ItemInstanceId].RemainingUses = amount;
+		else
+			items.Add(itemInstance.ItemInstanceId, itemInstance);
 
-		//Remove empty item instances
-		foreach (var item in itemsToRemove)
-			items.Remove(item);
+		if (items[itemInstance.ItemInstanceId].RemainingUses <= 0)
+			items.Remove(itemInstance.ItemInstanceId);
 	}
 }

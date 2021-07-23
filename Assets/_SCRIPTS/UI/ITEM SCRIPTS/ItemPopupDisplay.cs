@@ -29,12 +29,13 @@ public class ItemPopupDisplay : PopupDisplay
 				JsonObject[] functions = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(json);
 				foreach (var function in functions)
 				{
-					if (Helper.GenericFunctions.ContainsKey(function["Name"].ToString()))
-					{
-						JsonObject functionArgs = PlayFabSimpleJson.DeserializeObject<JsonObject>(function["Args"].ToString());
-						functionArgs.Add("Sender", args[2]);
-						Helper.GenericFunctions[function["Name"].ToString()]?.Invoke(functionArgs);
-					}
+					JsonObject functionArgs;
+					if (function.ContainsKey("Args"))
+						functionArgs = PlayFabSimpleJson.DeserializeObject<JsonObject>(function["Args"].ToString());
+					else
+						functionArgs = new JsonObject();
+					functionArgs.Add("Sender", args[2]);
+					Helper.ExecuteGenericFunction(function["Name"].ToString(), functionArgs);
 				}
 				UIManager.Instance.popupManager.HidePopup(this);
 			});

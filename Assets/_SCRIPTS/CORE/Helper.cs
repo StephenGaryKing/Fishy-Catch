@@ -12,7 +12,7 @@ public static class Helper
 			"SellItem", (o) =>
 			{
 				JsonObject jObject = o as JsonObject;
-				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["Sender"] as ItemInstance, jObject["CurrencyType"].ToString());
+				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["Sender"] as ItemInstance, jObject["CurrencyType"].ToString(), null, null);
 			}
 		},
 		{ 
@@ -21,8 +21,35 @@ public static class Helper
 				JsonObject jObject = o as JsonObject;
 				UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
 			}
+		},
+		{
+			"CheckItem", (o) =>
+			{
+				//JsonObject jObject = o as JsonObject;
+				//UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
+			}
+		},
+		{
+			"RollTable", (o) =>
+			{
+				//JsonObject jObject = o as JsonObject;
+				//UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
+			}
+		},
+		{
+			"DiscardItem", (o) =>
+			{
+				JsonObject jObject = o as JsonObject;
+				GameplayFlowManager.Instance.inventoryManager.DiscardItem(jObject["ItemInstance"] as ItemInstance, int.Parse(jObject["Amount"].ToString()), null, null);
+			}
 		}
 	};
+
+	public static void ExecuteGenericFunction(string functionName, object args)
+	{
+		if (GenericFunctions.ContainsKey(functionName))
+			GenericFunctions[functionName]?.Invoke(args);
+	}
 
 
 	[System.Serializable]

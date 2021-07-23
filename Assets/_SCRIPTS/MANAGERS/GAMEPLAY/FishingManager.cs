@@ -89,11 +89,11 @@ public class FishingManager : MonoBehaviour
 			VirtualCurrency = "PW",
 			Price = (int)fish.VirtualCurrencyPrices["PW"]
 		};
-		GameplayFlowManager.Instance.inventoryManager.PurchaseItem(request, Onsuccess, OnFail);
+		GameplayFlowManager.Instance.inventoryManager.PurchaseItem(request, OnSuccess, null);
 
-		void Onsuccess(PurchaseItemResult result)
+		void OnSuccess(List<ItemInstance> items)
 		{
-			var item = result.Items[0];
+			var item = items[0];
 			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
 			var popup = popupReference.Value as ItemPopupDisplay;
 
@@ -119,12 +119,6 @@ public class FishingManager : MonoBehaviour
 				buttonData.ToArray(),
 				item
 			});
-		}
-
-		void OnFail(PlayFabError error)
-		{
-			UIManager.Instance.debugDisplay.ShowDebugText("failed to add " + fish.DisplayName + " to the player's inventory");
-			Debug.LogError(error.GenerateErrorReport());
 		}
 	}
 
