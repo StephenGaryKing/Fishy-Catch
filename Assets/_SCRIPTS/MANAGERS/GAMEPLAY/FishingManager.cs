@@ -26,7 +26,9 @@ public class FishingManager : MonoBehaviour
 
 	void GetRandomFish(System.Action<CatalogItem> onComplete)
 	{
-		GameplayFlowManager.Instance.gatchaManager.RollTable("Anything", i => onComplete(GameplayFlowManager.Instance.catalogueManager.GetItem(i.ToString())), null);
+		UnityEvent<object> onSuccess = new UnityEvent<object>();
+		onSuccess.AddListener(i => onComplete(GameplayFlowManager.Instance.catalogueManager.GetItem(i.ToString())));
+		GameplayFlowManager.Instance.gatchaManager.RollTable("Anything", onSuccess, null);
 	}
 
 	void CastFishingLine()
@@ -98,13 +100,17 @@ public class FishingManager : MonoBehaviour
 
 			List<JsonObject> buttonData = new List<JsonObject>();
 			JsonObject customData = PlayFabSimpleJson.DeserializeObject<JsonObject>(fish.CustomData);
+
+			if (customData == null)
+				customData = new JsonObject();
 			if (customData.ContainsKey("Buttons"))
 				buttonData = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(customData["Buttons"].ToString()).ToList();
+			else
+				buttonData = new List<JsonObject>();
 
 			//Create default buttons
 			JsonObject function = new JsonObject() { 
-				{ "Name", "HidePopup"},
-				{ "Args", new JsonObject() { { "PopupID", popupReference.Key } } }
+				{ "Name", "HidePopup" }
 			};
 			JsonObject[] functions = new JsonObject[] { function };
 			JsonObject doneButton = new JsonObject();

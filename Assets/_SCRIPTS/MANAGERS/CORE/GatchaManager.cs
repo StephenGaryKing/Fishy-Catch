@@ -5,11 +5,12 @@ using UnityEngine;
 using PlayFab.ClientModels;
 using PlayFab.Json;
 using System;
+using UnityEngine.Events;
 
 public class GatchaManager
 {
 
-	public void RollTable(string tableName, Action<object> onSuccess, Action<object> onFail)
+	public void RollTable(string tableName, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{

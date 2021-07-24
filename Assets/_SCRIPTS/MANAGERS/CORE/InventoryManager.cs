@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using PlayFab.ClientModels;
 using PlayFab.Json;
+using UnityEngine.Events;
 
 public static class CurrencyTypes
 {
@@ -68,7 +69,7 @@ public class InventoryManager
 		}
 	}
 
-	public void SellItem(ItemInstance itemInstance, string currencyType, Action<object> onSuccess, Action<object> onFail)
+	public void SellItem(ItemInstance itemInstance, string currencyType, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
@@ -101,21 +102,42 @@ public class InventoryManager
 		}
 	}
 
-	public void CheckItem(string itemID, int amount, Action<object> onSuccess, Action<object> onFail)
+	public void CheckItem(string itemID, int amount, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		if (!items.ContainsKey(itemID))
 		{
 			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
 			var popup = popupReference.Value as ItemPopupDisplay;
+			
+			//Create the title
+			string title;
+			if (amount == 1)
+				title = "You need a " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + " to do that";
+			else
+				title = "You need " + amount + " " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + "s to do that";
+
+			//Create default buttons
+			JsonObject function = new JsonObject() {
+				{ "Name", "HidePopup"},
+				{ "Args", new JsonObject() { { "PopupID", popupReference.Key } } }
+			};
+			JsonObject[] functions = new JsonObject[] { function };
+			JsonObject doneButton = new JsonObject();
+			doneButton.Add("Name", "Done");
+			doneButton.Add("Functions", PlayFab.PfEditor.Json.PlayFabSimpleJson.SerializeObject(functions));
+			List<JsonObject> buttonData = new List<JsonObject>();
+			buttonData.Add(doneButton);
+
 			popup.Setup(new object[] {
-				"You need a " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + " to do that"
+				title,
+				buttonData.ToArray()
 			});
 			onFail?.Invoke(null);
 		}
 		else
 			CheckItem(items[itemID], amount, onSuccess, onFail);
 	}
-	public void CheckItem(ItemInstance itemInstance, int amount, Action<object> onSuccess, Action<object> onFail)
+	public void CheckItem(ItemInstance itemInstance, int amount, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
@@ -131,6 +153,12 @@ public class InventoryManager
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
+			if (result.Error != null)
+			{
+				Debug.LogError(result.Error.Message + "/n" + result.Error.StackTrace);
+			}
+
+			Debug.Log(result.FunctionResult);
 			bool success = (bool)result.FunctionResult;
 			if (success)
 				onSuccess?.Invoke(null);
@@ -146,7 +174,7 @@ public class InventoryManager
 		}
 	}
 
-	public void DiscardItem(ItemInstance itemInstance, int amount, Action<object> onSuccess, Action<object> onFail)
+	public void DiscardItem(ItemInstance itemInstance, int amount, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		PlayFabClientAPI.ConsumeItem(new ConsumeItemRequest()
 		{
@@ -156,17 +184,18 @@ public class InventoryManager
 
 		void OnSuccess(ConsumeItemResult result)
 		{
-			SetItemAmountLocal(itemInstance, -1);
-
-			Debug.Log("Sold item: " + itemInstance.DisplayName);
+			ModifyItemAmountLocal(itemInstance, -amount);
+			Debug.Log("Discarded item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
 			UIManager.Instance.itemDisplay.UpdateItems();
+			onSuccess?.Invoke(null);
 		}
 
 		void OnFail(PlayFabError error)
 		{
-			Debug.LogError("Failed to sell item");
+			Debug.LogError("Failed to discard item");
 			Debug.LogError(error.GenerateErrorReport());
+			onFail?.Invoke(null);
 		}
 	}
 
@@ -175,7 +204,7 @@ public class InventoryManager
 		if (items.ContainsKey(itemInstance.ItemId))
 			items[itemInstance.ItemId].RemainingUses += amount;
 		else
-			items.Add(itemInstance.ItemInstanceId, itemInstance);
+			items.Add(itemInstance.ItemId, itemInstance);
 
 		if (items[itemInstance.ItemId].RemainingUses <= 0)
 			items.Remove(itemInstance.ItemId);

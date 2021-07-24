@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 public class PopupManager : MonoBehaviour
 {
@@ -11,6 +12,7 @@ public class PopupManager : MonoBehaviour
 	/// Root locartion for all popups
 	/// </summary>
 	public Transform uiRoot;
+	Stack<byte> popupStack = new Stack<byte>();
 
 	byte GetUID()
 	{
@@ -20,46 +22,48 @@ public class PopupManager : MonoBehaviour
 		return tempID;
 	}
 
+	public KeyValuePair<byte, PopupDisplay> ShowPopup(byte popupIndex)
+	{
+		if (shownPopups.ContainsKey(popupIndex))
+		{
+			shownPopups[popupIndex].gameObject.SetActive(true);
+			return new KeyValuePair<byte, PopupDisplay>(popupIndex, shownPopups[popupIndex]);
+		}
+		return new KeyValuePair<byte, PopupDisplay>(0, null);
+	}
+
 	public KeyValuePair<byte,PopupDisplay> ShowPopup(string popupName)
 	{
 		if (popups.ContainsKey(popupName))
 		{
+			if (popupStack.Count > 0)
+				shownPopups[popupStack.Peek()].gameObject.SetActive(false);
+
 			PopupDisplay popup = Instantiate(popups[popupName], uiRoot);
 			byte uid = GetUID();
+			popup.uid = uid;
 			shownPopups.Add(uid, popup);
+			popupStack.Push(uid);
 			return new KeyValuePair<byte, PopupDisplay>(uid, popup);
 		}
 		return new KeyValuePair<byte, PopupDisplay>(0, null);
 	}
 
-	public void HidePopup(PopupDisplay popup, Action<object> onSuccess, Action<object> onFail)
+	public void HidePopup(UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
-		byte? uid = null;
-		foreach (var p in shownPopups)
+		if (popupStack.Count > 0)
 		{
-			if (p.Value == popup)
+			byte uid = popupStack.Pop();
+			if (shownPopups.ContainsKey(uid))
 			{
-				uid = p.Key;
-			}
-		}
+				Destroy(shownPopups[uid].gameObject);
+				shownPopups.Remove(uid);
+				onSuccess?.Invoke(null);
 
-		if (uid != null)
-		{
-			Destroy(shownPopups[(byte)uid].gameObject);
-			shownPopups.Remove((byte)uid);
-			onSuccess?.Invoke(null);
-			return;
-		}
-		onFail?.Invoke(null);
-	}
-	public void HidePopup(byte uid, Action<object> onSuccess, Action<object> onFail)
-	{
-		if (shownPopups.ContainsKey(uid))
-		{
-			Destroy(shownPopups[uid].gameObject);
-			shownPopups.Remove(uid);
-			onSuccess?.Invoke(null);
-			return;
+				if (popupStack.Count > 0)
+					shownPopups[popupStack.Peek()].gameObject.SetActive(true);
+				return;
+			}
 		}
 		onFail?.Invoke(null);
 	}

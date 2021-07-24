@@ -6,70 +6,83 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using UnityEngine;
+using UnityEngine.Events;
 
 public static class Helper
 {
+	[Serializable]
+	public class OnEvent : UnityEvent<object>
+	{
+	}
+
 	public static Dictionary<string, System.Action<object>> GenericFunctions = new Dictionary<string, System.Action<object>>()
 	{
 		{ 
 			"SellItem", (o) =>
 			{
-				JsonObject jObject = o as JsonObject;
-				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
-				Action<object> OnFail = (Action<object>)jObject["OnFail"];
-				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["Sender"] as ItemInstance, jObject["CurrencyType"].ToString(), OnSuccess, OnFail);
+				Dictionary<string, object> packet = o as Dictionary<string, object>;
+				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+				OnEvent OnFail = (OnEvent)packet["OnFail"];
+				GameplayFlowManager.Instance.inventoryManager.SellItem(packet["Sender"] as ItemInstance, packet["CurrencyType"].ToString(), OnSuccess, OnFail);
 			}
 		},
 		{ 
 			"HidePopup", (o) =>
 			{
-				JsonObject jObject = o as JsonObject;
-				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
-				Action<object> OnFail = (Action<object>)jObject["OnFail"];
-				UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()), OnSuccess, OnFail);
+				Dictionary<string, object> packet = o as Dictionary<string, object>;
+				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+				OnEvent OnFail = (OnEvent)packet["OnFail"];
+				UIManager.Instance.popupManager.HidePopup(OnSuccess, OnFail);
 			}
 		},
 		{
 			"CheckItem", (o) =>
 			{
-				JsonObject jObject = o as JsonObject;
-				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
-				Action<object> OnFail = (Action<object>)jObject["OnFail"];
-				GameplayFlowManager.Instance.inventoryManager.CheckItem(jObject["ItemID"].ToString(), int.Parse(jObject["Amount"].ToString()), OnSuccess, OnFail);
+				Dictionary<string, object> packet = o as Dictionary<string, object>;
+				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+				OnEvent OnFail = (OnEvent)packet["OnFail"];
+				GameplayFlowManager.Instance.inventoryManager.CheckItem(packet["ItemID"].ToString(), int.Parse(packet["Amount"].ToString()), OnSuccess, OnFail);
 			}
 		},
 		{
 			"RollTable", (o) =>
 			{
-				JsonObject jObject = o as JsonObject;
-				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
-				Action<object> OnFail = (Action<object>)jObject["OnFail"];
-				GameplayFlowManager.Instance.gatchaManager.RollTable(jObject["TableID"].ToString(), OnSuccess, OnFail);
+				Dictionary<string, object> packet = o as Dictionary<string, object>;
+				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+				OnEvent OnFail = (OnEvent)packet["OnFail"];
+				GameplayFlowManager.Instance.gatchaManager.RollTable(packet["TableID"].ToString(), OnSuccess, OnFail);
 			}
 		},
 		{
 			"DiscardItem", (o) =>
 			{
-				JsonObject jObject = o as JsonObject;
-				GameplayFlowManager.Instance.inventoryManager.DiscardItem(jObject["ItemInstance"] as ItemInstance, int.Parse(jObject["Amount"].ToString()), null, null);
+				Dictionary<string, object> packet = o as Dictionary<string, object>;
+				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+				OnEvent OnFail = (OnEvent)packet["OnFail"];
+				ItemInstance itemInstance;
+				if (packet.ContainsKey("ItemID"))
+					itemInstance = GameplayFlowManager.Instance.inventoryManager.items[packet["ItemID"].ToString()];
+				else
+					itemInstance = packet["Sender"] as ItemInstance;
+				GameplayFlowManager.Instance.inventoryManager.DiscardItem(itemInstance, int.Parse(packet["Amount"].ToString()), OnSuccess, OnFail);
 			}
 		}
 	};
 
 	public static void ExecuteGenericFunction(string functionName, object args)
 	{
-		JsonObject jObject = args as JsonObject;
+		Dictionary<string, object> packet = args as Dictionary<string, object>;
 		try
 		{
 			if (GenericFunctions.ContainsKey(functionName))
 				GenericFunctions[functionName]?.Invoke(args);
 			else
-				((Action<object>)jObject["OnSuccess"])?.Invoke(null);
+				((OnEvent)packet["OnFail"])?.Invoke(null);
 		}
 		catch (Exception e)
 		{
 			Debug.LogError(e.Message + "\n" + e.StackTrace);
-			((Action<object>)jObject["OnFail"])?.Invoke(null);
+			((OnEvent)packet["OnFail"])?.Invoke(null);
 		}
 	}
 

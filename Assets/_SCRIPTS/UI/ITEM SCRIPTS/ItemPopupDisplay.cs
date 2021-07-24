@@ -29,8 +29,7 @@ public class ItemPopupDisplay : PopupDisplay
 			{
 				string json = funcInfo["Functions"].ToString();
 				JsonObject[] functions = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(json);
-				HandleFunction(functions, args[2], 0);
-				UIManager.Instance.popupManager.HidePopup(this, null, null);
+				HandleFunction(functions, args.Length > 2? args[2] : null, 0);
 			});
 		}
 	}
@@ -40,15 +39,27 @@ public class ItemPopupDisplay : PopupDisplay
 		if (currentFunctionIndex >= functions.Length)
 			return;
 		var function = functions[currentFunctionIndex];
-		JsonObject functionArgs;
+		Dictionary<string, object> functionArgs;
 		if (function.ContainsKey("Args"))
-			functionArgs = PlayFabSimpleJson.DeserializeObject<JsonObject>(function["Args"].ToString());
+			functionArgs = PlayFabSimpleJson.DeserializeObject<Dictionary<string, object>>(function["Args"].ToString());
 		else
-			functionArgs = new JsonObject();
+			functionArgs = new Dictionary<string, object>();
 		functionArgs.Add("Sender", sender);
-		functionArgs.Add("OnSuccess", new Action<object>(o => HandleFunction(functions, sender, currentFunctionIndex + 1)));
-		functionArgs.Add("OnFail", new Action<object>(o => UIManager.Instance.debugDisplay.ShowDebugText("Failed to execute " + function["Name"].ToString())));
+
+		//Modify the Onsuccess callback
+		if (!functionArgs.ContainsKey("OnSuccess"))
+			functionArgs.Add("OnSuccess", new Helper.OnEvent());
+		Helper.OnEvent onSuccess = (Helper.OnEvent)functionArgs["OnSuccess"];
+		onSuccess.AddListener(o => HandleFunction(functions, sender, currentFunctionIndex + 1));
+		functionArgs["OnSuccess"] = onSuccess;
+
+		//Modify the OnFail callback
+		if (!functionArgs.ContainsKey("OnFail"))
+			functionArgs.Add("OnFail", new Helper.OnEvent());
+		Helper.OnEvent onFail = (Helper.OnEvent)functionArgs["OnFail"];
+		onFail.AddListener(o => UIManager.Instance.debugDisplay.ShowDebugText("Failed to execute " + function["Name"].ToString()));
+		functionArgs["OnFail"] = onFail;
+
 		Helper.ExecuteGenericFunction(function["Name"].ToString(), functionArgs);
 	}
-
 }
