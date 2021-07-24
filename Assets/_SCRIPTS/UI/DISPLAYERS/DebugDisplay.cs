@@ -9,7 +9,7 @@ public class DebugDisplay : MonoBehaviour
 
 	public void ShowDebugText(string text, bool persist = true)
 	{
-		Debug.Log(text);
+		Debug.LogError(text);
 		debugText.text = text;
 	}
 }

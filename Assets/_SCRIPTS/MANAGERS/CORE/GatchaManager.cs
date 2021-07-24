@@ -4,11 +4,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using PlayFab.ClientModels;
 using PlayFab.Json;
+using System;
 
 public class GatchaManager
 {
 
-	public void RollTable(string tableName, System.Action<string> onComplete)
+	public void RollTable(string tableName, Action<object> onSuccess, Action<object> onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
@@ -21,13 +22,14 @@ public class GatchaManager
 		{
 			JsonObject obj = (JsonObject)result.FunctionResult;
 			obj.TryGetValue("ResultItemId", out object itemID);
-			onComplete(itemID.ToString());
+			onSuccess?.Invoke(itemID);
 		}
 
 		void OnFail(PlayFabError error)
 		{
 			Debug.LogError("Failed login");
 			Debug.LogError(error.GenerateErrorReport());
+			onFail?.Invoke(null);
 		}
 	}
 }

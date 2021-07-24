@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using PlayFab.ClientModels;
 using System;
-using UnityEngine;
 using UnityEngine.Events;
 using PlayFab.Json;
 using System.Linq;
@@ -27,7 +26,7 @@ public class FishingManager : MonoBehaviour
 
 	void GetRandomFish(System.Action<CatalogItem> onComplete)
 	{
-		GameplayFlowManager.Instance.gatchaManager.RollTable("Anything", i => onComplete(GameplayFlowManager.Instance.catalogueManager.GetItem(i)));
+		GameplayFlowManager.Instance.gatchaManager.RollTable("Anything", i => onComplete(GameplayFlowManager.Instance.catalogueManager.GetItem(i.ToString())), null);
 	}
 
 	void CastFishingLine()
@@ -91,9 +90,9 @@ public class FishingManager : MonoBehaviour
 		};
 		GameplayFlowManager.Instance.inventoryManager.PurchaseItem(request, OnSuccess, null);
 
-		void OnSuccess(List<ItemInstance> items)
+		void OnSuccess(object items)
 		{
-			var item = items[0];
+			var item = (items as List<ItemInstance>)[0];
 			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
 			var popup = popupReference.Value as ItemPopupDisplay;
 

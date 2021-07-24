@@ -25,7 +25,7 @@ public class InventoryManager
 		void OnSuccess(GetUserInventoryResult result)
 		{
 			foreach (var item in result.Inventory)
-				items.Add(item.ItemInstanceId, item);
+				items.Add(item.ItemId, item);
 			currencies = result.VirtualCurrency;
 			UIManager.Instance?.currencyDisplay.UpdateCurrency();
 			UIManager.Instance?.itemDisplay.UpdateItems();
@@ -38,7 +38,7 @@ public class InventoryManager
 		}
 	}
 
-	public void PurchaseItem(PurchaseItemRequest request, Action<List<ItemInstance>> onSuccess, Action onFail)
+	public void PurchaseItem(PurchaseItemRequest request, Action<object> onSuccess, Action<object> onFail)
 	{
 		if (currencies[request.VirtualCurrency] < request.Price)
 		{
@@ -64,23 +64,22 @@ public class InventoryManager
 		{
 			Debug.LogError("Failed to sell item");
 			Debug.LogError(error.GenerateErrorReport());
-			onFail?.Invoke();
+			onFail?.Invoke(null);
 		}
 	}
 
-	public void SellItem(ItemInstance itemInstance, string currencyType, Action onSuccess, Action onFail)
+	public void SellItem(ItemInstance itemInstance, string currencyType, Action<object> onSuccess, Action<object> onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
 			FunctionName = "SellItem",
-			FunctionParameter = new Dictionary<string, string>{
+			FunctionParameter = new Dictionary<string, object>{
             // This is a hex-string value from the GetUserInventory result
             { "soldItemInstanceId", itemInstance.ItemInstanceId },
             // Which redeemable virtual currency should be used in your game
             { "requestedVcType", currencyType },
 		}
 		}, OnSuccess, OnFail);
-
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
@@ -91,16 +90,63 @@ public class InventoryManager
 			Debug.Log("Sold item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
 			UIManager.Instance.itemDisplay.UpdateItems();
+			onSuccess?.Invoke(null);
 		}
 
 		void OnFail(PlayFabError error)
 		{
 			Debug.LogError("Failed to sell item");
 			Debug.LogError(error.GenerateErrorReport());
+			onFail?.Invoke(null);
 		}
 	}
 
-	public void DiscardItem(ItemInstance itemInstance, int amount, Action onSuccess, Action onFail)
+	public void CheckItem(string itemID, int amount, Action<object> onSuccess, Action<object> onFail)
+	{
+		if (!items.ContainsKey(itemID))
+		{
+			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
+			var popup = popupReference.Value as ItemPopupDisplay;
+			popup.Setup(new object[] {
+				"You need a " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + " to do that"
+			});
+			onFail?.Invoke(null);
+		}
+		else
+			CheckItem(items[itemID], amount, onSuccess, onFail);
+	}
+	public void CheckItem(ItemInstance itemInstance, int amount, Action<object> onSuccess, Action<object> onFail)
+	{
+		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
+		{
+			FunctionName = "CheckItem",
+			FunctionParameter = new Dictionary<string, object>{
+            // This is a hex-string value from the GetUserInventory result
+            { "checkItemInstanceId", itemInstance.ItemInstanceId },
+            // How many the user must have
+            { "amount", amount },
+		}
+		}, OnSuccess, OnFail);
+
+
+		void OnSuccess(ExecuteCloudScriptResult result)
+		{
+			bool success = (bool)result.FunctionResult;
+			if (success)
+				onSuccess?.Invoke(null);
+			else
+				onFail?.Invoke(null);
+		}
+
+		void OnFail(PlayFabError error)
+		{
+			Debug.LogError("Failed to check item");
+			Debug.LogError(error.GenerateErrorReport());
+			onFail?.Invoke(null);
+		}
+	}
+
+	public void DiscardItem(ItemInstance itemInstance, int amount, Action<object> onSuccess, Action<object> onFail)
 	{
 		PlayFabClientAPI.ConsumeItem(new ConsumeItemRequest()
 		{
@@ -126,22 +172,22 @@ public class InventoryManager
 
 	void ModifyItemAmountLocal(ItemInstance itemInstance, int amount)
 	{
-		if (items.ContainsKey(itemInstance.ItemInstanceId))
-			items[itemInstance.ItemInstanceId].RemainingUses += amount;
+		if (items.ContainsKey(itemInstance.ItemId))
+			items[itemInstance.ItemId].RemainingUses += amount;
 		else
 			items.Add(itemInstance.ItemInstanceId, itemInstance);
 
-		if (items[itemInstance.ItemInstanceId].RemainingUses <= 0)
-			items.Remove(itemInstance.ItemInstanceId);
+		if (items[itemInstance.ItemId].RemainingUses <= 0)
+			items.Remove(itemInstance.ItemId);
 	}
 	void SetItemAmountLocal(ItemInstance itemInstance, int amount)
 	{
-		if (items.ContainsKey(itemInstance.ItemInstanceId))
-			items[itemInstance.ItemInstanceId].RemainingUses = amount;
+		if (items.ContainsKey(itemInstance.ItemId))
+			items[itemInstance.ItemId].RemainingUses = amount;
 		else
-			items.Add(itemInstance.ItemInstanceId, itemInstance);
+			items.Add(itemInstance.ItemId, itemInstance);
 
-		if (items[itemInstance.ItemInstanceId].RemainingUses <= 0)
-			items.Remove(itemInstance.ItemInstanceId);
+		if (items[itemInstance.ItemId].RemainingUses <= 0)
+			items.Remove(itemInstance.ItemId);
 	}
 }

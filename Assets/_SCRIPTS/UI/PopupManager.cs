@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -31,7 +32,7 @@ public class PopupManager : MonoBehaviour
 		return new KeyValuePair<byte, PopupDisplay>(0, null);
 	}
 
-	public void HidePopup(PopupDisplay popup)
+	public void HidePopup(PopupDisplay popup, Action<object> onSuccess, Action<object> onFail)
 	{
 		byte? uid = null;
 		foreach (var p in shownPopups)
@@ -46,14 +47,20 @@ public class PopupManager : MonoBehaviour
 		{
 			Destroy(shownPopups[(byte)uid].gameObject);
 			shownPopups.Remove((byte)uid);
+			onSuccess?.Invoke(null);
+			return;
 		}
+		onFail?.Invoke(null);
 	}
-	public void HidePopup(byte uid)
+	public void HidePopup(byte uid, Action<object> onSuccess, Action<object> onFail)
 	{
 		if (shownPopups.ContainsKey(uid))
 		{
 			Destroy(shownPopups[uid].gameObject);
 			shownPopups.Remove(uid);
+			onSuccess?.Invoke(null);
+			return;
 		}
+		onFail?.Invoke(null);
 	}
 }

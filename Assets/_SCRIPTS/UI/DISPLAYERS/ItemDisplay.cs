@@ -12,7 +12,7 @@ public class ItemDisplay : MonoBehaviour
 	{
 		ClearItems();
 		foreach(var item in GameplayFlowManager.Instance.inventoryManager.items)
-			DisplayItem(item);
+			DisplayItem(item.Value);
 	}
 
 	void ClearItems()

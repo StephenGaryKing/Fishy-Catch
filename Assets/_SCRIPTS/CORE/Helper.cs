@@ -1,7 +1,10 @@
+using Newtonsoft.Json.Linq;
 using PlayFab.ClientModels;
 using PlayFab.Json;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using UnityEngine;
 
 public static class Helper
@@ -12,28 +15,36 @@ public static class Helper
 			"SellItem", (o) =>
 			{
 				JsonObject jObject = o as JsonObject;
-				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["Sender"] as ItemInstance, jObject["CurrencyType"].ToString(), null, null);
+				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
+				Action<object> OnFail = (Action<object>)jObject["OnFail"];
+				GameplayFlowManager.Instance.inventoryManager.SellItem(jObject["Sender"] as ItemInstance, jObject["CurrencyType"].ToString(), OnSuccess, OnFail);
 			}
 		},
 		{ 
 			"HidePopup", (o) =>
 			{
 				JsonObject jObject = o as JsonObject;
-				UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
+				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
+				Action<object> OnFail = (Action<object>)jObject["OnFail"];
+				UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()), OnSuccess, OnFail);
 			}
 		},
 		{
 			"CheckItem", (o) =>
 			{
-				//JsonObject jObject = o as JsonObject;
-				//UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
+				JsonObject jObject = o as JsonObject;
+				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
+				Action<object> OnFail = (Action<object>)jObject["OnFail"];
+				GameplayFlowManager.Instance.inventoryManager.CheckItem(jObject["ItemID"].ToString(), int.Parse(jObject["Amount"].ToString()), OnSuccess, OnFail);
 			}
 		},
 		{
 			"RollTable", (o) =>
 			{
-				//JsonObject jObject = o as JsonObject;
-				//UIManager.Instance.popupManager.HidePopup(byte.Parse(jObject["PopupID"].ToString()));
+				JsonObject jObject = o as JsonObject;
+				Action<object> OnSuccess = (Action<object>)jObject["OnSuccess"];
+				Action<object> OnFail = (Action<object>)jObject["OnFail"];
+				GameplayFlowManager.Instance.gatchaManager.RollTable(jObject["TableID"].ToString(), OnSuccess, OnFail);
 			}
 		},
 		{
@@ -47,8 +58,19 @@ public static class Helper
 
 	public static void ExecuteGenericFunction(string functionName, object args)
 	{
-		if (GenericFunctions.ContainsKey(functionName))
-			GenericFunctions[functionName]?.Invoke(args);
+		JsonObject jObject = args as JsonObject;
+		try
+		{
+			if (GenericFunctions.ContainsKey(functionName))
+				GenericFunctions[functionName]?.Invoke(args);
+			else
+				((Action<object>)jObject["OnSuccess"])?.Invoke(null);
+		}
+		catch (Exception e)
+		{
+			Debug.LogError(e.Message + "\n" + e.StackTrace);
+			((Action<object>)jObject["OnFail"])?.Invoke(null);
+		}
 	}
 
 
