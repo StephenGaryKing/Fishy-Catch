@@ -11,6 +11,7 @@ public class UIManager : MonoBehaviour
 	public DebugDisplay debugDisplay;
 	public CurrencyDisplay currencyDisplay;
 	public ItemDisplay itemDisplay;
+	public ItemDisplay shopDisplay;
 
 	public static UIManager Instance;
 

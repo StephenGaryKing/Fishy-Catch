@@ -29,7 +29,7 @@ public class InventoryManager
 				items.Add(item.ItemId, item);
 			currencies = result.VirtualCurrency;
 			UIManager.Instance?.currencyDisplay.UpdateCurrency();
-			UIManager.Instance?.itemDisplay.UpdateItems();
+			UIManager.Instance?.itemDisplay.UpdateItems(GameplayFlowManager.Instance.inventoryManager.items);
 		}
 
 		void OnFail(PlayFabError error)
@@ -56,7 +56,7 @@ public class InventoryManager
 				ModifyItemAmountLocal(item, 1);
 
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
-			UIManager.Instance.itemDisplay.UpdateItems();
+			UIManager.Instance.itemDisplay.UpdateItems(GameplayFlowManager.Instance.inventoryManager.items);
 
 			onSuccess?.Invoke(result.Items);
 		}
@@ -90,7 +90,7 @@ public class InventoryManager
 			
 			Debug.Log("Sold item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
-			UIManager.Instance.itemDisplay.UpdateItems();
+			UIManager.Instance.itemDisplay.UpdateItems(GameplayFlowManager.Instance.inventoryManager.items);
 			onSuccess?.Invoke(null);
 		}
 
@@ -106,32 +106,7 @@ public class InventoryManager
 	{
 		if (!items.ContainsKey(itemID))
 		{
-			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
-			var popup = popupReference.Value as ItemPopupDisplay;
 			
-			//Create the title
-			string title;
-			if (amount == 1)
-				title = "You need a " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + " to do that";
-			else
-				title = "You need " + amount + " " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + "s to do that";
-
-			//Create default buttons
-			JsonObject function = new JsonObject() {
-				{ "Name", "HidePopup"},
-				{ "Args", new JsonObject() { { "PopupID", popupReference.Key } } }
-			};
-			JsonObject[] functions = new JsonObject[] { function };
-			JsonObject doneButton = new JsonObject();
-			doneButton.Add("Name", "Done");
-			doneButton.Add("Functions", PlayFab.PfEditor.Json.PlayFabSimpleJson.SerializeObject(functions));
-			List<JsonObject> buttonData = new List<JsonObject>();
-			buttonData.Add(doneButton);
-
-			popup.Setup(new object[] {
-				title,
-				buttonData.ToArray()
-			});
 			onFail?.Invoke(null);
 		}
 		else
@@ -162,7 +137,10 @@ public class InventoryManager
 			if (success)
 				onSuccess?.Invoke(null);
 			else
+			{
+				UIManager.Instance.popupManager.ShowItemRequiredPopup(itemInstance.ItemId, amount);
 				onFail?.Invoke(null);
+			}
 		}
 
 		void OnFail(PlayFabError error)
@@ -186,7 +164,7 @@ public class InventoryManager
 			ModifyItemAmountLocal(itemInstance, -amount);
 			Debug.Log("Discarded item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
-			UIManager.Instance.itemDisplay.UpdateItems();
+			UIManager.Instance.itemDisplay.UpdateItems(GameplayFlowManager.Instance.inventoryManager.items);
 			onSuccess?.Invoke(null);
 		}
 
@@ -198,7 +176,7 @@ public class InventoryManager
 		}
 	}
 
-	void ModifyItemAmountLocal(ItemInstance itemInstance, int amount)
+	public void ModifyItemAmountLocal(ItemInstance itemInstance, int amount)
 	{
 		if (items.ContainsKey(itemInstance.ItemId))
 			items[itemInstance.ItemId].RemainingUses += amount;
@@ -208,7 +186,7 @@ public class InventoryManager
 		if (items[itemInstance.ItemId].RemainingUses <= 0)
 			items.Remove(itemInstance.ItemId);
 	}
-	void SetItemAmountLocal(ItemInstance itemInstance, int amount)
+	public void SetItemAmountLocal(ItemInstance itemInstance, int amount)
 	{
 		if (items.ContainsKey(itemInstance.ItemId))
 			items[itemInstance.ItemId].RemainingUses = amount;

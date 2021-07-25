@@ -1,3 +1,4 @@
+using PlayFab.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -66,5 +67,35 @@ public class PopupManager : MonoBehaviour
 			}
 		}
 		onFail?.Invoke(null);
+	}
+
+	public void ShowItemRequiredPopup(string itemID, int amount)
+	{
+		var popupReference = ShowPopup("ItemDisplayPopup");
+		var popup = popupReference.Value as ItemPopupDisplay;
+
+		//Create the title
+		string title;
+		if (amount == 1)
+			title = "You need a " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + " to do that";
+		else
+			title = "You need " + amount + " " + GameplayFlowManager.Instance.catalogueManager.GetItem(itemID).DisplayName + "s to do that";
+
+		//Create default buttons
+		JsonObject function = new JsonObject() {
+				{ "Name", "HidePopup"},
+				{ "Args", new JsonObject() { { "PopupID", popupReference.Key } } }
+			};
+		JsonObject[] functions = new JsonObject[] { function };
+		JsonObject doneButton = new JsonObject();
+		doneButton.Add("Name", "Done");
+		doneButton.Add("Functions", PlayFab.PfEditor.Json.PlayFabSimpleJson.SerializeObject(functions));
+		List<JsonObject> buttonData = new List<JsonObject>();
+		buttonData.Add(doneButton);
+
+		popup.Setup(new object[] {
+				title,
+				buttonData.ToArray()
+			});
 	}
 }

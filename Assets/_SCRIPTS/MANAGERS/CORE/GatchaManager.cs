@@ -58,23 +58,30 @@ public class GatchaManager
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
-			Debug.Log(result.FunctionResult);
-			if (result.Error != null)
+			JsonObject JObject = (JsonObject)result.FunctionResult;
+			if (JObject.ContainsKey("Success"))
 			{
-				Debug.LogError(result.Error.Message + "\n" + result.Error.StackTrace);
-			}
-
-			JsonObject obj = (JsonObject)result.FunctionResult;
-			if (obj.ContainsKey("Success"))
-			{
-				if (!(bool)obj["Success"])
+				if (!(bool)JObject["Success"])
 				{
+					UIManager.Instance.popupManager.ShowItemRequiredPopup(GameplayFlowManager.Instance.catalogueManager.GetItem(item.ItemId).Container.KeyItemId, 1);
 					onFail?.Invoke(null);
 					return;
 				}
 			}
-			obj.TryGetValue("GrantedItems", out object itemIds);
-			onSuccess?.Invoke(itemIds);
+
+			string keyId = GameplayFlowManager.Instance.catalogueManager.GetItem(item.ItemId).Container.KeyItemId;
+			GameplayFlowManager.Instance.inventoryManager.ModifyItemAmountLocal(GameplayFlowManager.Instance.inventoryManager.items[keyId], -1);
+			GameplayFlowManager.Instance.inventoryManager.ModifyItemAmountLocal(item, -1);
+			ItemInstance[] items = null;
+			if (JObject.ContainsKey("GrantedItems"))
+			{
+				items = PlayFabSimpleJson.DeserializeObject<ItemInstance[]>(JObject["GrantedItems"].ToString());
+				foreach (var item in items)
+					GameplayFlowManager.Instance.inventoryManager.SetItemAmountLocal(item, (int)item.RemainingUses);
+			}
+
+			UIManager.Instance.itemDisplay.UpdateItems(GameplayFlowManager.Instance.inventoryManager.items);
+			onSuccess?.Invoke(items);
 		}
 
 		void OnFail(PlayFabError error)

@@ -8,10 +8,10 @@ public class ItemDisplay : MonoBehaviour
 	public GameObject itemUIPrefab;
 	public Transform contentArea;
 
-	public void UpdateItems()
+	public void UpdateItems(Dictionary<string, ItemInstance> items)
 	{
 		ClearItems();
-		foreach(var item in GameplayFlowManager.Instance.inventoryManager.items)
+		foreach(var item in items)
 			DisplayItem(item.Value);
 	}
 
