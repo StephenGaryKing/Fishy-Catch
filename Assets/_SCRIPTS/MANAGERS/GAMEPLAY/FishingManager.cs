@@ -31,17 +31,22 @@ public class FishingManager : MonoBehaviour
 		GameplayFlowManager.Instance.gatchaManager.RollTable("Anything", onSuccess, null);
 	}
 
+	bool casting = false;
 	void CastFishingLine()
 	{
+		if (casting || fishing != null)
+		{
+			UIManager.Instance.debugDisplay.ShowDebugText("You can only cast your line once");
+			return;
+		}
+
+		casting = true;
 		//Create a random fish
 		GetRandomFish(f =>
 		{
+			casting = false;
 			fish = f;
-
-			if (fishing != null)
-				UIManager.Instance.debugDisplay.ShowDebugText("You can only cast your line once");
-			else
-				fishing = StartCoroutine(Cast(5f, CastFishingLine));
+			fishing = StartCoroutine(Cast(5f, CastFishingLine));
 		});
 	}
 

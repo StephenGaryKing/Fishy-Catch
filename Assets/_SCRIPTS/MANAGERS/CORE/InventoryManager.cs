@@ -158,7 +158,6 @@ public class InventoryManager
 				Debug.LogError(result.Error.Message + "/n" + result.Error.StackTrace);
 			}
 
-			Debug.Log(result.FunctionResult);
 			bool success = (bool)result.FunctionResult;
 			if (success)
 				onSuccess?.Invoke(null);

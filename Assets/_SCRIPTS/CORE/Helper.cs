@@ -54,6 +54,15 @@ public static class Helper
 			}
 		},
 		{
+			"GrantTable", (o) =>
+			{
+				Dictionary<string, object> packet = o as Dictionary<string, object>;
+				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+				OnEvent OnFail = (OnEvent)packet["OnFail"];
+				GameplayFlowManager.Instance.gatchaManager.GrantTable(packet["TableID"].ToString(), OnSuccess, OnFail);
+			}
+		},
+		{
 			"DiscardItem", (o) =>
 			{
 				Dictionary<string, object> packet = o as Dictionary<string, object>;

@@ -330,7 +330,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemName: {fileID: 6426963084490357773}
   itemAmount: {fileID: 6426963084450113066}
-  button: {fileID: 0}
+  button: {fileID: 2028355898217955472}
 --- !u!1 &8689094063121484492
 GameObject:
   m_ObjectHideFlags: 0
