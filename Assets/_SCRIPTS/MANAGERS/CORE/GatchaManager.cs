@@ -15,7 +15,10 @@ public class GatchaManager
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
 			FunctionName = "RollTable",
-			FunctionParameter = new { TableId = tableName }
+			FunctionParameter = new Dictionary<string, object>
+			{
+				{ "tableId", tableName }
+			}
 		},OnSuccess, OnFail);
 
 
@@ -39,22 +42,39 @@ public class GatchaManager
 		}
 	}
 	
-	public void GrantTable(string tableName, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
+	public void OpenContainer(ItemInstance item, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
-			FunctionName = "GrantTable",
-			FunctionParameter = new { TableId = tableName }
+			FunctionName = "OpenContainer",
+			FunctionParameter = new Dictionary<string, object>
+			{
+				{ "itemId", item.ItemId },
+				{ "containerInstanceId", item.ItemInstanceId },
+				{ "catalogVersion", item.CatalogVersion }
+			}
 		},OnSuccess, OnFail);
 
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
+			Debug.Log(result.FunctionResult);
 			if (result.Error != null)
 			{
 				Debug.LogError(result.Error.Message + "\n" + result.Error.StackTrace);
 			}
-			onSuccess?.Invoke(null);
+
+			JsonObject obj = (JsonObject)result.FunctionResult;
+			if (obj.ContainsKey("Success"))
+			{
+				if (!(bool)obj["Success"])
+				{
+					onFail?.Invoke(null);
+					return;
+				}
+			}
+			obj.TryGetValue("GrantedItems", out object itemIds);
+			onSuccess?.Invoke(itemIds);
 		}
 
 		void OnFail(PlayFabError error)

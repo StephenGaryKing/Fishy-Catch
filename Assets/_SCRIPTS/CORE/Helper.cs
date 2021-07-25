@@ -44,22 +44,22 @@ public static class Helper
 				GameplayFlowManager.Instance.inventoryManager.CheckItem(packet["ItemID"].ToString(), int.Parse(packet["Amount"].ToString()), OnSuccess, OnFail);
 			}
 		},
+		//{
+		//	"RollTable", (o) =>
+		//	{
+		//		Dictionary<string, object> packet = o as Dictionary<string, object>;
+		//		OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
+		//		OnEvent OnFail = (OnEvent)packet["OnFail"];
+		//		GameplayFlowManager.Instance.gatchaManager.RollTable(packet["TableID"].ToString(), OnSuccess, OnFail);
+		//	}
+		//},
 		{
-			"RollTable", (o) =>
+			"OpenContainer", (o) =>
 			{
 				Dictionary<string, object> packet = o as Dictionary<string, object>;
 				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
 				OnEvent OnFail = (OnEvent)packet["OnFail"];
-				GameplayFlowManager.Instance.gatchaManager.RollTable(packet["TableID"].ToString(), OnSuccess, OnFail);
-			}
-		},
-		{
-			"GrantTable", (o) =>
-			{
-				Dictionary<string, object> packet = o as Dictionary<string, object>;
-				OnEvent OnSuccess = (OnEvent)packet["OnSuccess"];
-				OnEvent OnFail = (OnEvent)packet["OnFail"];
-				GameplayFlowManager.Instance.gatchaManager.GrantTable(packet["TableID"].ToString(), OnSuccess, OnFail);
+				GameplayFlowManager.Instance.gatchaManager.OpenContainer(packet["Sender"] as ItemInstance, OnSuccess, OnFail);
 			}
 		},
 		{
