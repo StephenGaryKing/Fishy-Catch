@@ -22,6 +22,10 @@ public class CatalogueManager
 		{
 			Debug.Log("Catalog downloaded: " + request.CatalogVersion);
 			SetupCatalog(request.CatalogVersion, result.Catalog);
+
+			GameplayFlowManager.Instance.InitStoreManager();
+			GameplayFlowManager.Instance.InitInventoryManager();
+			GameplayFlowManager.Instance.InitGatchaManager();
 		}
 
 		void OnFail(PlayFabError error)

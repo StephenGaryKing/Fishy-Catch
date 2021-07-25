@@ -71,6 +71,7 @@ public class InventoryManager
 
 	public void SellItem(ItemInstance itemInstance, string currencyType, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
+		UIManager.Instance.popupManager.ShowPopup("LoadingPopup");
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
 			FunctionName = "SellItem",
@@ -84,6 +85,7 @@ public class InventoryManager
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			currencies[currencyType] += (int)GameplayFlowManager.Instance.catalogueManager.GetItem(itemInstance.ItemId).VirtualCurrencyPrices[currencyType];
 
 			ModifyItemAmountLocal(itemInstance, -1);
@@ -96,6 +98,7 @@ public class InventoryManager
 
 		void OnFail(PlayFabError error)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			Debug.LogError("Failed to sell item");
 			Debug.LogError(error.GenerateErrorReport());
 			onFail?.Invoke(null);
@@ -105,8 +108,7 @@ public class InventoryManager
 	public void CheckItem(string itemID, int amount, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
 		if (!items.ContainsKey(itemID))
-		{
-			
+		{	
 			onFail?.Invoke(null);
 		}
 		else
@@ -114,6 +116,7 @@ public class InventoryManager
 	}
 	public void CheckItem(ItemInstance itemInstance, int amount, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
+		UIManager.Instance.popupManager.ShowPopup("LoadingPopup");
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
 			FunctionName = "CheckItem",
@@ -128,6 +131,7 @@ public class InventoryManager
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			if (result.Error != null)
 			{
 				Debug.LogError(result.Error.Message + "/n" + result.Error.StackTrace);
@@ -145,6 +149,7 @@ public class InventoryManager
 
 		void OnFail(PlayFabError error)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			Debug.LogError("Failed to check item");
 			Debug.LogError(error.GenerateErrorReport());
 			onFail?.Invoke(null);
@@ -153,6 +158,7 @@ public class InventoryManager
 
 	public void DiscardItem(ItemInstance itemInstance, int amount, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
+		UIManager.Instance.popupManager.ShowPopup("LoadingPopup");
 		PlayFabClientAPI.ConsumeItem(new ConsumeItemRequest()
 		{
 			ItemInstanceId = itemInstance.ItemInstanceId,
@@ -161,6 +167,7 @@ public class InventoryManager
 
 		void OnSuccess(ConsumeItemResult result)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			ModifyItemAmountLocal(itemInstance, -amount);
 			Debug.Log("Discarded item: " + itemInstance.DisplayName);
 			UIManager.Instance.currencyDisplay.UpdateCurrency();
@@ -170,6 +177,7 @@ public class InventoryManager
 
 		void OnFail(PlayFabError error)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			Debug.LogError("Failed to discard item");
 			Debug.LogError(error.GenerateErrorReport());
 			onFail?.Invoke(null);

@@ -11,6 +11,8 @@ public class GameplayFlowManager : MonoBehaviour
 	[HideInInspector]
 	public CatalogueManager catalogueManager;
 	[HideInInspector]
+	public StoreManager storeManager;
+	[HideInInspector]
 	public InventoryManager inventoryManager;
 	[HideInInspector]
 	public GatchaManager gatchaManager;
@@ -24,28 +26,36 @@ public class GameplayFlowManager : MonoBehaviour
 		InitPlayfabManager(() =>
 		{
 			InitCatalogueManager();
-			InitInventoryManager();
-			InitGatchaManager();
 		});
     }
 
-	void InitPlayfabManager(System.Action onComplete)
+	public void InitPlayfabManager(System.Action onComplete)
 	{
-		playfabManager = new PlayfabManager(onComplete);
+		if (playfabManager == null)
+			playfabManager = new PlayfabManager(onComplete);
 	}
 
-	void InitCatalogueManager()
+	public void InitCatalogueManager()
 	{
-		catalogueManager = new CatalogueManager();
+		if (catalogueManager == null)
+			catalogueManager = new CatalogueManager();
 	}
 
-	void InitInventoryManager()
+	public void InitStoreManager()
 	{
-		inventoryManager = new InventoryManager();
+		if (storeManager == null)
+			storeManager = new StoreManager();
 	}
 
-	void InitGatchaManager()
+	public void InitInventoryManager()
 	{
-		gatchaManager = new GatchaManager();
+		if (inventoryManager == null)
+			inventoryManager = new InventoryManager();
+	}
+
+	public void InitGatchaManager()
+	{
+		if (gatchaManager == null)
+			gatchaManager = new GatchaManager();
 	}
 }

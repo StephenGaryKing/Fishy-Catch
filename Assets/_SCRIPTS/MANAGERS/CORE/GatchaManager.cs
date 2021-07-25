@@ -44,6 +44,7 @@ public class GatchaManager
 	
 	public void OpenContainer(ItemInstance item, UnityEvent<object> onSuccess, UnityEvent<object> onFail)
 	{
+		UIManager.Instance.popupManager.ShowPopup("LoadingPopup");
 		PlayFabClientAPI.ExecuteCloudScript(new ExecuteCloudScriptRequest()
 		{
 			FunctionName = "OpenContainer",
@@ -58,6 +59,7 @@ public class GatchaManager
 
 		void OnSuccess(ExecuteCloudScriptResult result)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			JsonObject JObject = (JsonObject)result.FunctionResult;
 			if (JObject.ContainsKey("Success"))
 			{
@@ -76,8 +78,8 @@ public class GatchaManager
 			if (JObject.ContainsKey("GrantedItems"))
 			{
 				items = PlayFabSimpleJson.DeserializeObject<ItemInstance[]>(JObject["GrantedItems"].ToString());
-				foreach (var item in items)
-					GameplayFlowManager.Instance.inventoryManager.SetItemAmountLocal(item, (int)item.RemainingUses);
+				foreach (var i in items)
+					GameplayFlowManager.Instance.inventoryManager.SetItemAmountLocal(i, (int)i.RemainingUses);
 			}
 
 			UIManager.Instance.itemDisplay.UpdateItems(GameplayFlowManager.Instance.inventoryManager.items);
@@ -86,6 +88,7 @@ public class GatchaManager
 
 		void OnFail(PlayFabError error)
 		{
+			UIManager.Instance.popupManager.HidePopup(null, null);
 			Debug.LogError("Failed login");
 			Debug.LogError(error.GenerateErrorReport());
 			onFail?.Invoke(null);

@@ -5,51 +5,62 @@ using UnityEngine.UI;
 using PlayFab.ClientModels;
 using PlayFab.Json;
 using System.Linq;
+using PlayFab.SharedModels;
 
 public class ItemUI : MonoBehaviour
 {
 	public Text itemName;
 	public Text itemAmount;
 	public Button button;
-	public void ShowItem(ItemInstance item)
+	public void ShowItem(string itemJson)
 	{
-		itemName.text = item.DisplayName;
-		itemAmount.text = item.RemainingUses.ToString();
-		button.onClick.AddListener(() =>
+		JsonObject jObject = PlayFabSimpleJson.DeserializeObject<JsonObject>(itemJson);
+
+		if (jObject.ContainsKey("ItemId"))
 		{
-			var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
-			var popup = popupReference.Value as ItemPopupDisplay;
+			string itemId = jObject["ItemId"].ToString();
+			string displayName = GameplayFlowManager.Instance.catalogueManager.GetItem(itemId).DisplayName;
+			itemName.text = displayName;
 
-			List<JsonObject> buttonData = new List<JsonObject>();
-			JsonObject customData;
-			if (GameplayFlowManager.Instance.catalogueManager.GetItem(item.ItemId) == null)
-				customData = new JsonObject();
-			else
-				customData = PlayFabSimpleJson.DeserializeObject<JsonObject>(GameplayFlowManager.Instance.catalogueManager.GetItem(item.ItemId).CustomData);
+			if (jObject.ContainsKey("RemainingUses"))
+				itemAmount.text = jObject["RemainingUses"].ToString();
 
-			if (customData == null)
-				customData = new JsonObject();
-			if (customData.ContainsKey("Buttons"))
-				buttonData = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(customData["Buttons"].ToString()).ToList();
-			else
-				buttonData = new List<JsonObject>();
-
-			//Create default buttons
-			JsonObject function = new JsonObject() {
-				{ "Name", "HidePopup" }
-			};
-			JsonObject[] functions = new JsonObject[] { function };
-			JsonObject doneButton = new JsonObject();
-			doneButton.Add("Name", "Done");
-			doneButton.Add("Functions", PlayFab.PfEditor.Json.PlayFabSimpleJson.SerializeObject(functions));
-			buttonData.Add(doneButton);
-
-			popup?.Setup(new object[]
+			button.onClick.AddListener(() =>
 			{
-				item.DisplayName,
+				var popupReference = UIManager.Instance.popupManager.ShowPopup("ItemDisplayPopup");
+				var popup = popupReference.Value as ItemPopupDisplay;
+
+				List<JsonObject> buttonData = new List<JsonObject>();
+				JsonObject customData;
+				if (GameplayFlowManager.Instance.catalogueManager.GetItem(itemId) == null)
+					customData = new JsonObject();
+				else
+					customData = PlayFabSimpleJson.DeserializeObject<JsonObject>(GameplayFlowManager.Instance.catalogueManager.GetItem(itemId).CustomData);
+
+				if (customData == null)
+					customData = new JsonObject();
+				if (customData.ContainsKey("Buttons"))
+					buttonData = PlayFabSimpleJson.DeserializeObject<JsonObject[]>(customData["Buttons"].ToString()).ToList();
+				else
+					buttonData = new List<JsonObject>();
+
+				//Create default buttons
+				JsonObject function = new JsonObject() {
+				{ "Name", "HidePopup" }
+				};
+				JsonObject[] functions = new JsonObject[] { function };
+				JsonObject doneButton = new JsonObject();
+				doneButton.Add("Name", "Done");
+				doneButton.Add("Functions", PlayFab.PfEditor.Json.PlayFabSimpleJson.SerializeObject(functions));
+				buttonData.Add(doneButton);
+
+				popup?.Setup(new object[]
+				{
+				displayName,
 				buttonData.ToArray(),
-				item
+				itemJson
+				});
 			});
-		});
+		}
 	}
 }
